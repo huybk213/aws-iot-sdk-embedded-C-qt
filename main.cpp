@@ -63,8 +63,21 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
     IOT_UNUSED(pData);
     IOT_UNUSED(pClient);
     IOT_INFO("Subscribe callback");
-    IOT_INFO("%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, (char *) params->payload);
-    cout << "New message" << endl;
+//    IOT_INFO("%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, (char *) params->payload);
+
+    char messages[(int)params->payloadLen];
+    memset(messages, 0, (int)params->payloadLen);
+
+    char topic_name[topicNameLen];
+    for(int i = 0; i < topicNameLen; i++)
+    {
+        topic_name[i] = topicName[i];
+    }
+
+    cout << "New message\r\nTopic: " << topicName << endl;
+
+    sprintf(messages, (char*)params->payload, (int)params->payloadLen);
+    cout << messages << endl;
 }
 
 void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
@@ -148,6 +161,7 @@ void parseInputArgsForConnectParams(int argc, char **argv)
 
 }
 
+
 int main(int argc, char **argv)
 {
     bool infinitePublishFlag = true;
@@ -170,6 +184,7 @@ int main(int argc, char **argv)
     parseInputArgsForConnectParams(argc, argv);
 
     IOT_INFO("\nAWS IoT SDK Version %d.%d.%d-%s\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
+    cout << "AWS IoT SDK" << endl;
 
     getcwd(CurrentWD, sizeof(CurrentWD));
     snprintf(rootCA, PATH_MAX + 1, "%s/%s/%s", CurrentWD, certDirectory, AWS_IOT_ROOT_CA_FILENAME);
@@ -213,8 +228,10 @@ int main(int argc, char **argv)
     rc = aws_iot_mqtt_connect(&client, &connectParams);
     if(SUCCESS != rc)
     {
-        IOT_ERROR("Error(%d) connecting to %s:%d", rc, mqttInitParams.pHostURL, mqttInitParams.port);
-        cout << " Error connecting to host" << endl;
+        char error[1024];
+        sprintf(error, "Error (%d) connecting to %s:%d", rc, mqttInitParams.pHostURL, mqttInitParams.port);
+         // IOT_ERROR("Error(%d) connecting to %s:%d", rc, mqttInitParams.pHostURL, mqttInitParams.port);
+        cout << error << endl;
         return rc;
     }
     /*
@@ -226,7 +243,9 @@ int main(int argc, char **argv)
     if(SUCCESS != rc)
     {
         IOT_ERROR("Unable to set Auto Reconnect to true - %d", rc);
-        cout << "Unable to set Auto Reconnect " << endl;
+        char error[128];
+        sprintf(error, "Unable to set Auto Reconnect to true - %d", rc);
+        cout << error << endl;
         return rc;
     }
 
@@ -235,7 +254,9 @@ int main(int argc, char **argv)
 
     if(SUCCESS != rc)
     {
-        cout << "Error subscribing " << endl;
+        char error[64];
+        sprintf(error, "%d", rc);
+        cout << "Error subscribing, return error code" << rc << endl;
         return rc;
     }
     cout << "Subscribing return success" << endl;
@@ -278,12 +299,12 @@ int main(int argc, char **argv)
 
     if(SUCCESS != rc)
     {
-        IOT_ERROR("An error occurred in the loop.\n");
+        // IOT_ERROR("An error occurred in the loop.\n");
         cout << "An error occurred in the loop" << endl;
     }
     else
     {
-        IOT_INFO("Publish done\n");
+        // IOT_INFO("Publish done\r\n");
         cout << "Publish done" << endl;
     }
 
