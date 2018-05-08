@@ -59,7 +59,14 @@ public:
 
     void aws_mqtt_connect(int keep_alive_second, string mqtt_client_id);
     void aws_mqtt_subscribe(string topic, QoS qos);
-    void aws_iot_publish(string topic);
+    void aws_mqtt_publish(string topic, string message, QoS qos);
+
+    /*
+     * Enable Auto Reconnect functionality. Minimum and Maximum time of Exponential backoff are set in aws_iot_config.h
+     *  #AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL
+     *  #AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL
+     */
+     void aws_mqtt_autoreconnect_eneable();
 
 
 //    void iot_disconnect_callback_handler(AWS_IoT_Client *pClient, void *data);                                           /* Disconnect callback hanlder */

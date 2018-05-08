@@ -179,7 +179,10 @@ int main(int argc, char **argv)
     application_mqtt_aws test_broker(HostAddress, 8883, rootca_path, client_crt_path, client_key, NULL, true);
     test_broker.aws_mqtt_connect(600, AWS_IOT_MQTT_CLIENT_ID);
     test_broker.aws_mqtt_subscribe("sdkTest/clg", QOS0);
-    aws_iot_mqtt_yield(&test_broker.aws_client, 100000);
+    test_broker.aws_mqtt_autoreconnect_eneable();
+
+    aws_iot_mqtt_yield(&test_broker.aws_client, 1000000);
+    test_broker.aws_mqtt_publish("testSdk/clg", "haha", QOS0);
     for(;;);
 
     bool infinitePublishFlag = true;

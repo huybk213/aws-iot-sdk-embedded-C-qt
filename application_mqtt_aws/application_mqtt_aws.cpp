@@ -131,6 +131,59 @@ void application_mqtt_aws::aws_mqtt_subscribe(string topic, QoS qos)
 
 }
 
+void application_mqtt_aws::aws_mqtt_publish(string topic, string payload, QoS qos)
+{
+#ifdef BOCORODO_DEBUG
+    cout << "Publishing" << endl;
+#endif
+
+    IoT_Error_t rc;
+    this->publish_topic = topic;
+    this->paramsQOSx.qos = qos;
+    this->paramsQOSx.payload = (void*) payload.c_str();
+    this->paramsQOSx.payloadLen = payload.length();
+    this->paramsQOSx.isRetained = 0;
+    rc = aws_iot_mqtt_publish(&this->aws_client, (const char*) topic.c_str(), topic.length(), &this->paramsQOSx);
+    if(SUCCESS != rc)
+    {
+#ifdef BOCORODO_DEBUG
+        cout << "Publish message error to topic " << topic << endl;
+#endif
+        return;
+    }
+    else
+    {
+#ifndef BOCORODO_DEBUG
+        cout << "Publish message to topic " << topic.c_str() << " successful" << endl;
+#endif
+    }
+}
+
+
+/* Auto reconnect funtion */
+void application_mqtt_aws::aws_mqtt_autoreconnect_eneable()
+{
+    IoT_Error_t rc;
+    rc = aws_iot_mqtt_autoreconnect_set_status(&this->aws_client, true);
+    if(SUCCESS != rc)
+    {
+#ifdef BOCORODO_DEBUG
+        char error[128];
+        sprintf(error, "Unable to set Auto Reconnect to true - %d", rc);
+        cout << error << endl;
+#endif
+        return;
+    }
+    else
+    {
+#ifdef BOCORODO_DEBUG
+        cout << "Set auto reconnect successful with AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL = " << AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL;
+        cout << ", AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL = " << AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL << endl;
+        cout << "AWS_IOT_MIX[MAX]_RECONNECT_WAIT_INTERVAL define in file aws_iot_config.h" << endl;
+#endif
+    }
+}
+
 /* Publish topic */
 void aws_iot_publish(string topic);
 
