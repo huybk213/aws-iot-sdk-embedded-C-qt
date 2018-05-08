@@ -15,7 +15,8 @@ TEMPLATE = app
 # any feature of Qt which has been marked as deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
-DEFINES += QT_DEPRECATED_WARNINGS
+DEFINES += QT_DEPRECATED_WARNINGS \
+           BOCORODO_DEBUG
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -117,7 +118,8 @@ SOURCES += \
     aws-iot-device-sdk-c/src/aws_iot_shadow.c \
     aws-iot-device-sdk-c/src/aws_iot_shadow_actions.c \
     aws-iot-device-sdk-c/src/aws_iot_shadow_json.c \
-    aws-iot-device-sdk-c/src/aws_iot_shadow_records.c
+    aws-iot-device-sdk-c/src/aws_iot_shadow_records.c \
+    application_mqtt_aws/application_mqtt_aws.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -221,7 +223,8 @@ HEADERS += \
     aws-iot-device-sdk-c/platform/linux/common/timer_platform.h \
     aws-iot-device-sdk-c/platform/linux/mbedtls/network_platform.h \
     aws-iot-device-sdk-c/platform/linux/pthread/threads_platform.h \
-    aws-iot-device-sdk-c/samples/linux/subscribe_publish_cpp_sample/aws_iot_config.h
+    aws-iot-device-sdk-c/samples/linux/subscribe_publish_cpp_sample/aws_iot_config.h \
+    application_mqtt_aws/application_mqtt_aws.h
 
 FORMS += \
         mainwindow.ui
@@ -234,5 +237,6 @@ INCLUDEPATH += $$PWD/aws-iot-device-sdk-c/external_libs/mbedTLS/include/ \
                $$PWD/aws-iot-device-sdk-c/platform/linux/common \
                $$PWD/aws-iot-device-sdk-c/platform/linux/mbedtls \
                $$PWD/aws-iot-device-sdk-c/external_libs/jsmn \
-               $$PWD/aws-iot-device-sdk-c/samples/linux/subscribe_publish_cpp_sample/
+               $$PWD/aws-iot-device-sdk-c/samples/linux/subscribe_publish_cpp_sample/ \
+               $$PWD/application_mqtt_aws
 

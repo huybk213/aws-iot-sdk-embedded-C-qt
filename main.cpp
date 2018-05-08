@@ -36,8 +36,11 @@
 #include "aws_iot_log.h"
 #include "aws_iot_version.h"
 #include "aws_iot_mqtt_client_interface.h"
-using namespace std;
+#include "application_mqtt_aws.h"
+
 #include <iostream>
+using namespace std;
+
 /**
  * @brief Default cert location
  */
@@ -81,12 +84,13 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
 }
 
 void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
-    IOT_WARN("MQTT Disconnect");
+    // IOT_WARN("MQTT Disconnect");
     cout << "MQTT Disconnect" << endl;
     IoT_Error_t rc = FAILURE;
 
     if(NULL == pClient)
     {
+        cout << "NULL pClient" << endl;
         return;
     }
 
@@ -94,23 +98,25 @@ void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
 
     if(aws_iot_is_autoreconnect_enabled(pClient))
     {
-        IOT_INFO("Auto Reconnect is enabled, Reconnecting attempt will start now");
+        // IOT_INFO("Auto Reconnect is enabled, Reconnecting attempt will start now");
         cout << "Auto Reconnect is enabled, Reconnecting attempt will start now";
     }
     else
     {
-        IOT_WARN("Auto Reconnect not enabled. Starting manual reconnect...");
+        // IOT_WARN("Auto Reconnect not enabled. Starting manual reconnect...");
         cout << "Auto Reconnect not enabled. Starting manual reconnect..." << endl;
         rc = aws_iot_mqtt_attempt_reconnect(pClient);
         if(NETWORK_RECONNECTED == rc)
         {
-            IOT_WARN("Manual Reconnect Successful");
+            // IOT_WARN("Manual Reconnect Successful");
             cout << "Manual Reconnect Successful" << endl;
         }
         else
         {
-            IOT_WARN("Manual Reconnect Failed - %d", rc);
-            cout << "Manual Reconnect Failed" << endl;
+            char error[128];
+            sprintf(error, "Manual Reconnect Failed - %d", rc);
+            // IOT_WARN("Manual Reconnect Failed - %d", rc);
+            cout << error << endl;
         }
     }
 }
@@ -161,15 +167,30 @@ void parseInputArgsForConnectParams(int argc, char **argv)
 
 }
 
+char test_rootca_path[] = "/home/huy/huydeptrai/aws-iot-device-sdk-c/certs/rootCA.pem";
+int test_rootca_path_len =  sizeof(test_rootca_path) / sizeof(char*);
 
+string rootca_path = "/home/huy/huydeptrai/aws-iot-device-sdk-c/certs/rootCA.pem";
+string client_crt_path = "/home/huy/huydeptrai/aws-iot-device-sdk-c/certs/cerforthings.crt";
+string client_key = "/home/huy/huydeptrai/aws-iot-device-sdk-c/certs/private.key";
 int main(int argc, char **argv)
 {
+
+    application_mqtt_aws test_broker(HostAddress, 8883, rootca_path, client_crt_path, client_key, NULL, true);
+    test_broker.aws_mqtt_connect(600, AWS_IOT_MQTT_CLIENT_ID);
+    test_broker.aws_mqtt_subscribe("sdkTest/clg", QOS0);
+    aws_iot_mqtt_yield(&test_broker.aws_client, 100000);
+    for(;;);
+
     bool infinitePublishFlag = true;
     char rootCA[PATH_MAX + 1];
     char clientCRT[PATH_MAX + 1];
     char clientKey[PATH_MAX + 1];
     char CurrentWD[PATH_MAX + 1];
     char cPayload[100];
+    memset(rootCA, 0, PATH_MAX + 1);
+    memset(clientCRT, 0, PATH_MAX + 1);
+    memset(clientKey, 0, PATH_MAX + 1);
 
     int32_t i = 0;
 
@@ -183,8 +204,11 @@ int main(int argc, char **argv)
 
     parseInputArgsForConnectParams(argc, argv);
 
-    IOT_INFO("\nAWS IoT SDK Version %d.%d.%d-%s\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
-    cout << "AWS IoT SDK" << endl;
+    char* aws_sdk_info = new char[512];
+    sprintf(aws_sdk_info, "\r\nAWS IoT SDK Version %d.%d.%d-%s\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
+    // IOT_INFO("\nAWS IoT SDK Version %d.%d.%d-%s\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
+    cout << aws_sdk_info << endl;
+    delete aws_sdk_info;
 
     getcwd(CurrentWD, sizeof(CurrentWD));
     snprintf(rootCA, PATH_MAX + 1, "%s/%s/%s", CurrentWD, certDirectory, AWS_IOT_ROOT_CA_FILENAME);
@@ -198,9 +222,9 @@ int main(int argc, char **argv)
     mqttInitParams.enableAutoReconnect = false; // We enable this later below
     mqttInitParams.pHostURL = HostAddress;
     mqttInitParams.port = port;
-    mqttInitParams.pRootCALocation = rootCA;
-    mqttInitParams.pDeviceCertLocation = clientCRT;
-    mqttInitParams.pDevicePrivateKeyLocation = clientKey;
+    mqttInitParams.pRootCALocation = (char*)rootca_path.c_str();
+    mqttInitParams.pDeviceCertLocation = (char*)client_crt_path.c_str();
+    mqttInitParams.pDevicePrivateKeyLocation = (char*)client_key.c_str();
     mqttInitParams.mqttCommandTimeout_ms = 20000;
     mqttInitParams.tlsHandshakeTimeout_ms = 5000;
     mqttInitParams.isSSLHostnameVerify = true;
@@ -210,11 +234,13 @@ int main(int argc, char **argv)
     rc = aws_iot_mqtt_init(&client, &mqttInitParams);
     if(SUCCESS != rc)
     {
-        IOT_ERROR("aws_iot_mqtt_init returned error : %d ", rc);
-        cout << "aws_iot_mqtt_init returned error" << endl;
+    	char error[128];
+    	sprintf(error, "aws_iot_mqtt_init error: %d", rc);
+        //IOT_ERROR("aws_iot_mqtt_init returned error : %d ", rc);
+        cout << error << endl;
         return rc;
     }
-    cout << "aws_iot_mqtt_init returned success" << endl;
+    else cout << "aws_iot_mqtt_init returned success" << endl;
 
     connectParams.keepAliveIntervalInSec = 600;
     connectParams.isCleanSession = true;
@@ -223,7 +249,7 @@ int main(int argc, char **argv)
     connectParams.clientIDLen = (uint16_t) strlen(AWS_IOT_MQTT_CLIENT_ID);
     connectParams.isWillMsgPresent = false;
 
-    IOT_INFO("Connecting...");
+    // IOT_INFO("Connecting...");
     cout << "Connecting..." << endl;
     rc = aws_iot_mqtt_connect(&client, &connectParams);
     if(SUCCESS != rc)
@@ -242,7 +268,7 @@ int main(int argc, char **argv)
     rc = aws_iot_mqtt_autoreconnect_set_status(&client, true);
     if(SUCCESS != rc)
     {
-        IOT_ERROR("Unable to set Auto Reconnect to true - %d", rc);
+        // IOT_ERROR("Unable to set Auto Reconnect to true - %d", rc);
         char error[128];
         sprintf(error, "Unable to set Auto Reconnect to true - %d", rc);
         cout << error << endl;
@@ -284,7 +310,6 @@ int main(int argc, char **argv)
             // If the client is attempting to reconnect we will skip the rest of the loop.
             continue;
         }
-
         sprintf(cPayload, "%s : %d ", "hello from SDK QOS0", i++);
         cout << "Publishing topic sdkTest/sub, payload:" << cPayload << endl;
         paramsQOS0.payloadLen = strlen(cPayload);

@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
 	IOT_DEBUG("rootCA %s", rootCA);
 	IOT_DEBUG("clientCRT %s", clientCRT);
 	IOT_DEBUG("clientKey %s", clientKey);
+	
 	mqttInitParams.enableAutoReconnect = false; // We enable this later below
 	mqttInitParams.pHostURL = HostAddress;
 	mqttInitParams.port = port;
